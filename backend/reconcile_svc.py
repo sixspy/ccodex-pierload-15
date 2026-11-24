@@ -1,4 +1,8 @@
-"""提单册与过磅票对账证明。"""
+"""提单册与过磅票对账证明。
+
+对账只认正式票态（已裁定/已放行/已封闸）；影子、草案等未晋升回态
+一律不得计入对账，更不得当作已裁定——甲乙两种写法不得混用。
+"""
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
@@ -7,6 +11,9 @@ from auth import AuthHeader, require_user
 from validators import validate_bl_match
 
 router = APIRouter(tags=["reconcile"])
+
+# 甲路径下唯一允许进入对账的正式票态
+OFFICIAL_TICKET_STATUSES = ("已裁定", "已放行", "已封闸")
 
 
 @router.get("/api/reconcile")
@@ -43,10 +50,12 @@ def _reconcile_bl(conn, bl_code: str) -> dict:
         "SELECT * FROM bl_manifests WHERE bl_code=?", (bl_code,)
     ).fetchone()
     tickets = conn.execute(
-        """SELECT ticket_code, gross_t, status, generation FROM weigh_tickets
-           WHERE bl_ref=? AND status NOT IN ('作废')""",
-        (bl_code,),
+        f"""SELECT ticket_code, gross_t, status, generation FROM weigh_tickets
+           WHERE bl_ref=? AND status IN ({",".join("?" for _ in OFFICIAL_TICKET_STATUSES)})""",
+        (bl_code, *OFFICIAL_TICKET_STATUSES),
     ).fetchall()
+    # 双保险：即便库中出现影子/草案等未晋升态，也绝不纳入对账
+    tickets = [t for t in tickets if t["status"] in OFFICIAL_TICKET_STATUSES]
     if not tickets:
         return {
             "bl_code": bl_code,
@@ -121,4 +130,4 @@ def proof_ticket(ticket_code: str, authorization: AuthHeader = None):
             "coherent": bool(
                 manifest_match and overload_closed and (seal or release)
             ),
-        }
+        }

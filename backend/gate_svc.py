@@ -41,10 +41,12 @@ def release_gate(body: GateReleaseIn, authorization: AuthHeader = None):
             if not ticket:
                 raise HTTPException(404, "过磅票不存在")
             validate_ticket_mutable(dict(ticket))
-            if ticket["status"] not in ("已裁定", "旁路挂起"):
-                raise HTTPException(409, "票态不允许放行")
+            # 甲路径：放行只认正式票态「已裁定」。旁路挂起须先驳回/闭环回态；
+            # 影子、草案等未晋升回态一律不得抬杆，两边写法不得混用。
             if ticket["status"] == "旁路挂起":
-                raise HTTPException(409, "旁路挂起须先闭环")
+                raise HTTPException(409, "旁路挂起须先闭环回态")
+            if ticket["status"] != "已裁定":
+                raise HTTPException(409, "票态不允许放行")
             validate_no_open_overload(conn, body.ticket_id)
             exists = conn.execute(
                 "SELECT id FROM gate_releases WHERE ticket_id=? AND status='已放行'",
@@ -84,4 +86,4 @@ def release_gate(body: GateReleaseIn, authorization: AuthHeader = None):
                 "status": "已放行",
             }
         finally:
-            release(conn, lock_key, user)
+            release(conn, lock_key, user)

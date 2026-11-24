@@ -102,6 +102,10 @@ createApp({
       const s = String(t);
       return s.slice(0, 52) + (s.length > 52 ? "…" : "");
     }
+    function ticketStatusOf(ticketId) {
+      const t = tickets.value.find((x) => x.id === ticketId);
+      return t ? t.status : "—";
+    }
     function clearFlash() { actionErr.value = ""; actionOk.value = ""; }
     function flashOk(m) { actionOk.value = m; actionErr.value = ""; }
     function flashErr(e) { actionErr.value = e.message || String(e); actionOk.value = ""; }
@@ -203,6 +207,15 @@ createApp({
         flashOk("挂起已闭"); await refresh();
       } catch (e) { flashErr(e); }
     }
+    async function rejectOverload(holdId) {
+      clearFlash();
+      try {
+        const note = "驳回回态纪要：当班封死";
+        const r = await api.rejectOverload({ hold_id: holdId, note });
+        flashOk(`已驳回，票态回写为${r.ticket_status}`);
+        await refresh();
+      } catch (e) { flashErr(e); }
+    }
     async function releaseGate() {
       clearFlash();
       try {
@@ -268,9 +281,9 @@ createApp({
       blForm, lineageForm, customsForm, craneForm,
       adjudicableTickets, releasableTickets, sealableTickets,
       login, logout, refresh,
-      fmtT, ticketClass, shortText,
+      fmtT, ticketClass, shortText, ticketStatusOf,
       createBridge, loadBridgeDetail, createLane, createTicket, loadTicketDetail, selectTicket,
-      openOverload, closeOverload, releaseGate, createSeal, registerBl, addLineage,
+      openOverload, closeOverload, rejectOverload, releaseGate, createSeal, registerBl, addLineage,
       loadReconcile, loadAllReconcile, loadProof, enqueueCustoms, enqueueCrane,
     };
   },

@@ -46,6 +46,11 @@ class OverloadCloseIn(BaseModel):
     note: str = ""
 
 
+class OverloadRejectIn(BaseModel):
+    hold_id: int
+    note: str = ""
+
+
 class GateReleaseIn(BaseModel):
     ticket_id: int
     officer: str = "闸口员"
@@ -72,4 +77,4 @@ class LineageIn(BaseModel):
 
 class StubJobIn(BaseModel):
     mode: str = "dry_run"
-    detail: str = ""
+    detail: str = ""

@@ -1,11 +1,11 @@
 export const gateViewTemplate = `
 <section class="panel">
   <h2>闸口放行</h2>
-  <p class="hint">须票态已裁定且无开放超重挂起；旁路未闭环不得抬杆。</p>
+  <p class="hint">只认正式票态「已裁定」且无开放超重挂起；旁路挂起须驳回/闭环回态后方可抬杆，影子草案态不放行。</p>
   <div class="form-row">
-    <div><label>过磅票</label>
+    <div><label>过磅票（仅已裁定）</label>
       <select v-model.number="gateForm.ticket_id">
-        <option v-for="t in releasableTickets" :key="t.id" :value="t.id">{{ t.ticket_code }}</option>
+        <option v-for="t in releasableTickets" :key="t.id" :value="t.id">{{ t.ticket_code }} · {{ t.status }}</option>
       </select>
     </div>
     <div><label>值班员</label><input v-model="gateForm.officer"/></div>
@@ -27,4 +27,4 @@ export const gateViewTemplate = `
     </tbody>
   </table>
 </section>
-`;
+`;
